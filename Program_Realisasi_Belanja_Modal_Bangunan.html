@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Program Realisasi Belanja Modal Bangunan</title>
+<style>
+:root{--navy:#17365d;--blue:#245b91;--light:#f3f6fa;--line:#d9e1ea;--green:#197447;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--light);color:#202938}
+header{background:linear-gradient(120deg,var(--navy),var(--blue));color:white;padding:24px 20px}
+header h1{margin:0 0 8px;font-size:clamp(22px,3vw,30px)}header p{margin:0;opacity:.9}
+main{max-width:1400px;margin:22px auto;padding:0 16px 36px}.panel{background:white;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:0 2px 8px #12233b0a}
+h2{font-size:18px;margin:0 0 15px;color:var(--navy)}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+label{display:block;font-size:12px;font-weight:700;color:#4a5565;margin-bottom:6px}input,select,textarea{width:100%;border:1px solid #c8d2df;border-radius:7px;padding:10px;font:inherit;background:#fff;color:#202938}input:focus,select:focus,textarea:focus{outline:2px solid #8ab8e8;border-color:#245b91}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}button{border:0;border-radius:7px;padding:10px 14px;font-weight:700;cursor:pointer;background:var(--blue);color:white}button.secondary{background:#e8eef5;color:#24364b}button.danger{background:#b42318}button.green{background:#197447}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric{padding:16px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe}.metric span{display:block;font-size:12px;color:#667085;margin-bottom:8px}.metric strong{font-size:clamp(17px,2vw,24px);color:var(--navy);overflow-wrap:anywhere}.metric small{display:block;margin-top:7px;color:#667085}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1050px;font-size:13px}th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#eef3f8;color:#233c5b;white-space:nowrap}td.num,th.num{text-align:right;white-space:nowrap}.status{display:inline-block;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:700;background:#e8eef5;color:#334155}.status.done{background:#d9f4e5;color:#166534}.status.mid{background:#fff0c2;color:#854d0e}.status.zero{background:#fee2e2;color:#991b1b}.muted{color:#667085;font-size:12px}.progress{height:9px;background:#e8edf3;border-radius:9px;overflow:hidden;margin-top:10px}.progress div{height:100%;background:#238657;width:0%}.notice{padding:11px 13px;background:#fff8e6;border:1px solid #f4df9b;border-radius:8px;color:#704e00;font-size:13px;margin-top:12px}
+footer{text-align:center;color:#667085;font-size:12px;padding:8px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.grid,.cards{grid-template-columns:1fr}.panel{padding:13px}header{padding:20px 15px}}
+@media print{body{background:white}header{background:white;color:#111;padding:0 0 15px}.panel{box-shadow:none;break-inside:avoid}button,.actions,.no-print{display:none!important}main{max-width:none;margin:0;padding:0}.table-wrap{overflow:visible}table{min-width:0;font-size:9px}th,td{padding:5px}.metric strong{font-size:15px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Program Realisasi Belanja Modal Bangunan</h1>
+  <p>Monitoring pagu, kontrak, progres fisik, pembayaran, dan sisa anggaran kegiatan bangunan.</p>
+</header>
+<main>
+  <section class="panel">
+    <h2>Identitas Program</h2>
+    <div class="grid">
+      <div><label for="instansi">Nama Instansi</label><input id="instansi" value="RSUD Panglima Sebaya"></div>
+      <div><label for="tahun">Tahun Anggaran</label><input id="tahun" type="number" min="2000" max="2100" value="2027"></div>
+      <div><label for="unit">Unit / Bidang Pengelola</label><input id="unit" placeholder="Contoh: Bagian Perencanaan / IPRS"></div>
+      <div><label for="sumber">Sumber Dana</label><select id="sumber"><option>APBD</option><option>BLUD</option><option>DAK</option><option>APBN</option><option>Lainnya</option></select></div>
+    </div>
+    <div class="actions"><button onclick="saveAll()">Simpan Data</button><button class="secondary" onclick="loadAll()">Muat Data Tersimpan</button><button class="secondary" onclick="window.print()">Cetak / Simpan PDF</button><button class="secondary" onclick="exportCSV()">Ekspor CSV</button><button class="danger" onclick="clearAll()">Hapus Semua Data</button></div>
+    <p class="muted">Data tersimpan di penyimpanan browser pada komputer ini. Ekspor CSV secara berkala sebagai cadangan.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Ringkasan Realisasi</h2>
+    <div class="cards">
+      <div class="metric"><span>Total Pagu Anggaran</span><strong id="mPagu">Rp0</strong><small id="mKegiatan">0 kegiatan</small></div>
+      <div class="metric"><span>Total Realisasi Keuangan</span><strong id="mRealisasi">Rp0</strong><small id="mPersen">0% dari pagu</small><div class="progress"><div id="bar"></div></div></div>
+      <div class="metric"><span>Sisa Anggaran</span><strong id="mSisa">Rp0</strong><small>Pagu dikurangi realisasi</small></div>
+      <div class="metric"><span>Rata-rata Progres Fisik</span><strong id="mFisik">0%</strong><small>Rata-rata dari kegiatan yang terdata</small></div>
+    </div>
+    <div class="notice">Catatan: realisasi keuangan dihitung dari pembayaran yang sudah dibayarkan, bukan nilai kontrak. Pastikan angka sesuai dokumen anggaran, kontrak, berita acara, dan SP2D/bukti pembayaran.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Input / Ubah Data Kegiatan</h2>
+    <input id="editId" type="hidden">
+    <div class="grid">
+      <div><label for="kode">Kode Rekening / Kegiatan</label><input id="kode" placeholder="Contoh: 5.2.03.xx"></div>
+      <div><label for="nama">Nama Pekerjaan Bangunan *</label><input id="nama" placeholder="Contoh: Rehabilitasi ruang pelayanan"></div>
+      <div><label for="lokasi">Lokasi / Gedung</label><input id="lokasi" placeholder="Nama gedung / ruangan"></div>
+      <div><label for="pelaksana">Penyedia / Pelaksana</label><input id="pelaksana" placeholder="Nama penyedia atau swakelola"></div>
+      <div><label for="pagu">Pagu Anggaran (Rp) *</label><input id="pagu" type="number" min="0" step="1" placeholder="0"></div>
+      <div><label for="kontrak">Nilai Kontrak (Rp)</label><input id="kontrak" type="number" min="0" step="1" placeholder="0"></div>
+      <div><label for="fisik">Progres Fisik (%)</label><input id="fisik" type="number" min="0" max="100" step="0.01" value="0"></div>
+      <div><label for="bayar">Realisasi Keuangan / Dibayar (Rp)</label><input id="bayar" type="number" min="0" step="1" value="0"></div>
+      <div><label for="mulai">Tanggal Mulai</label><input id="mulai" type="date"></div>
+      <div><label for="selesai">Target Selesai</label><input id="selesai" type="date"></div>
+      <div><label for="status">Status Pekerjaan</label><select id="status"><option>Perencanaan</option><option>Proses Pengadaan</option><option>Kontrak</option><option>Pelaksanaan</option><option>Selesai</option><option>Ditunda</option></select></div>
+      <div><label for="catatan">Catatan / Kendala</label><input id="catatan" placeholder="Kendala, tindak lanjut, nomor kontrak"></div>
+    </div>
+    <div class="actions"><button onclick="addRecord()">Simpan Kegiatan</button><button class="secondary" onclick="resetForm()">Kosongkan Form</button></div>
+    <p class="muted">* Wajib diisi. Nilai pagu, kontrak, dan pembayaran harus berupa angka rupiah tanpa tanda titik/koma.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Daftar Realisasi Belanja Modal Bangunan</h2>
+    <div class="grid no-print" style="grid-template-columns:2fr 1fr;margin-bottom:14px">
+      <div><label for="search">Cari kegiatan / kode / lokasi</label><input id="search" oninput="render()" placeholder="Ketik kata pencarian..."></div>
+      <div><label for="filterStatus">Filter status</label><select id="filterStatus" onchange="render()"><option value="">Semua status</option><option>Perencanaan</option><option>Proses Pengadaan</option><option>Kontrak</option><option>Pelaksanaan</option><option>Selesai</option><option>Ditunda</option></select></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>No.</th><th>Kode / Nama Pekerjaan</th><th>Lokasi / Pelaksana</th><th class="num">Pagu (Rp)</th><th class="num">Kontrak (Rp)</th><th class="num">Realisasi (Rp)</th><th class="num">Sisa Pagu (Rp)</th><th class="num">Keuangan</th><th class="num">Fisik</th><th>Status / Target</th><th class="no-print">Aksi</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="11" class="muted">Belum ada data kegiatan. Silakan input kegiatan di formulir.</td></tr></tbody>
+    </table></div>
+  </section>
+</main>
+<footer>Program pencatatan lokal — lakukan verifikasi dengan dokumen resmi sebelum digunakan untuk pelaporan.</footer>
+<script>
+const $=id=>document.getElementById(id);
+let records=[];
+const rupiah=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const num=id=>Math.max(0,Number($(id).value)||0);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function resetForm(){['editId','kode','nama','lokasi','pelaksana','pagu','kontrak','bayar','mulai','selesai','catatan'].forEach(id=>$(id).value='');$('fisik').value=0;$('status').value='Perencanaan';$('nama').focus()}
+function addRecord(){
+ const nama=$('nama').value.trim();if(!nama){alert('Nama pekerjaan wajib diisi.');$('nama').focus();return}
+ if($('pagu').value===''||num('pagu')<0){alert('Isi pagu anggaran dengan angka yang valid.');return}
+ const pagu=num('pagu'),kontrak=num('kontrak'),bayar=num('bayar'),fisik=Math.min(100,num('fisik'));
+ if(bayar>pagu){if(!confirm('Realisasi keuangan melebihi pagu. Simpan data ini?'))return}
+ if(kontrak>pagu){if(!confirm('Nilai kontrak melebihi pagu. Simpan data ini?'))return}
+ const item={id:$('editId').value||String(Date.now())+'-'+Math.random().toString(16).slice(2),kode:$('kode').value.trim(),nama,lokasi:$('lokasi').value.trim(),pelaksana:$('pelaksana').value.trim(),pagu,kontrak,bayar,fisik,mulai:$('mulai').value,selesai:$('selesai').value,status:$('status').value,catatan:$('catatan').value.trim()};
+ const idx=records.findIndex(r=>r.id===item.id);if(idx>=0)records[idx]=item;else records.push(item);
+ saveAll(false);render();resetForm()
+}
+function editRecord(id){const r=records.find(x=>x.id===id);if(!r)return;const map={editId:'id',kode:'kode',nama:'nama',lokasi:'lokasi',pelaksana:'pelaksana',pagu:'pagu',kontrak:'kontrak',bayar:'bayar',fisik:'fisik',mulai:'mulai',selesai:'selesai',status:'status',catatan:'catatan'};for(const [field,key] of Object.entries(map))$(field).value=r[key]??'';window.scrollTo({top:$('nama').getBoundingClientRect().top+window.scrollY-120,behavior:'smooth'})}
+function deleteRecord(id){if(confirm('Hapus kegiatan ini?')){records=records.filter(r=>r.id!==id);saveAll(false);render()}}
+function render(){
+ const q=$('search').value.toLowerCase(),fs=$('filterStatus').value;
+ const list=records.filter(r=>(!fs||r.status===fs)&&[r.kode,r.nama,r.lokasi,r.pelaksana,r.catatan].join(' ').toLowerCase().includes(q));
+ $('tbody').innerHTML=list.length?list.map((r,i)=>{const pct=r.pagu?100*r.bayar/r.pagu:0;const cl=r.status==='Selesai'?'done':r.status==='Ditunda'?'zero':(r.status==='Pelaksanaan'||r.status==='Kontrak')?'mid':'';return `<tr><td>${i+1}</td><td><b>${esc(r.kode||'-')}</b><br>${esc(r.nama)}${r.catatan?`<br><span class="muted">${esc(r.catatan)}</span>`:''}</td><td>${esc(r.lokasi||'-')}<br><span class="muted">${esc(r.pelaksana||'-')}</span></td><td class="num">${rupiah(r.pagu)}</td><td class="num">${rupiah(r.kontrak)}</td><td class="num">${rupiah(r.bayar)}</td><td class="num">${rupiah(r.pagu-r.bayar)}</td><td class="num">${pct.toLocaleString('id-ID',{maximumFractionDigits:2})}%</td><td class="num">${Number(r.fisik).toLocaleString('id-ID',{maximumFractionDigits:2})}%</td><td><span class="status ${cl}">${esc(r.status)}</span><br><span class="muted">Target: ${esc(r.selesai||'-')}</span></td><td class="no-print"><button class="secondary" onclick="editRecord('${r.id}')">Ubah</button> <button class="danger" onclick="deleteRecord('${r.id}')">Hapus</button></td></tr>`}).join(''):'<tr><td colspan="11" class="muted">Tidak ada data yang sesuai.</td></tr>';
+ const pagu=records.reduce((a,r)=>a+r.pagu,0),bayar=records.reduce((a,r)=>a+r.bayar,0),fisik=records.length?records.reduce((a,r)=>a+r.fisik,0)/records.length:0,pct=pagu?bayar/pagu*100:0;
+ $('mPagu').textContent=rupiah(pagu);$('mRealisasi').textContent=rupiah(bayar);$('mSisa').textContent=rupiah(pagu-bayar);$('mKegiatan').textContent=records.length+' kegiatan';$('mPersen').textContent=pct.toLocaleString('id-ID',{maximumFractionDigits:2})+'% dari pagu';$('mFisik').textContent=fisik.toLocaleString('id-ID',{maximumFractionDigits:2})+'%';$('bar').style.width=Math.min(100,Math.max(0,pct))+'%';
+}
+function saveAll(show=true){const meta={instansi:$('instansi').value,tahun:$('tahun').value,unit:$('unit').value,sumber:$('sumber').value};try{localStorage.setItem('realisasiBelanjaModalBangunan_v1',JSON.stringify({meta,records}));if(show)alert('Data berhasil disimpan di browser ini.')}catch(e){if(show)alert('Penyimpanan browser tidak tersedia. Silakan ekspor CSV.');}}
+function loadAll(){try{const raw=localStorage.getItem('realisasiBelanjaModalBangunan_v1');if(!raw){alert('Belum ada data tersimpan di browser ini.');return}const d=JSON.parse(raw);records=Array.isArray(d.records)?d.records:[];for(const k of ['instansi','tahun','unit','sumber'])if(d.meta&&d.meta[k]!==undefined)$(k).value=d.meta[k];render();alert('Data berhasil dimuat.')}catch(e){alert('Data tersimpan tidak dapat dibaca.');}}
+function clearAll(){if(!confirm('Hapus semua data kegiatan dan data tersimpan pada browser ini? Tindakan ini tidak dapat dibatalkan.'))return;records=[];localStorage.removeItem('realisasiBelanjaModalBangunan_v1');render();resetForm()}
+function exportCSV(){const headers=['Instansi','Tahun Anggaran','Sumber Dana','Kode Rekening/Kegiatan','Nama Pekerjaan','Lokasi','Penyedia/Pelaksana','Pagu Anggaran','Nilai Kontrak','Realisasi Keuangan','Sisa Pagu','Progres Fisik (%)','Tanggal Mulai','Target Selesai','Status','Catatan'];const rows=records.map(r=>[$('instansi').value,$('tahun').value,$('sumber').value,r.kode,r.nama,r.lokasi,r.pelaksana,r.pagu,r.kontrak,r.bayar,r.pagu-r.bayar,r.fisik,r.mulai,r.selesai,r.status,r.catatan]);const csv=[headers,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Realisasi_Belanja_Modal_Bangunan_'+$('tahun').value+'.csv';a.click();URL.revokeObjectURL(a.href)}
+loadQuiet();function loadQuiet(){try{const d=JSON.parse(localStorage.getItem('realisasiBelanjaModalBangunan_v1')||'null');if(d){records=Array.isArray(d.records)?d.records:[];for(const k of ['instansi','tahun','unit','sumber'])if(d.meta&&d.meta[k]!==undefined)$(k).value=d.meta[k]}}catch(e){}render()}
+</script>
+</body>
+</html>
